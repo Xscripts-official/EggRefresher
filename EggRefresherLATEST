@@ -1,1 +1,5 @@
+-- Download cheat/delta here:
+-- https://deltaexploits.gg/android_dl
+
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Xscripts-official/Delta/refs/heads/main/delta"))()
