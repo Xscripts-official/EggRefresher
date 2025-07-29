@@ -56,7 +56,23 @@ status.TextSize = 14
 status.Text = ""
 status.Parent = frame
 
--- Function
+-- Close Button (X)
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -40, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 20
+closeButton.Text = "X"
+closeButton.Parent = frame
+
+-- Function to close the GUI
+closeButton.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- Function to set the pet's age
 local function setAge()
     local char = player.Character or player.CharacterAdded:Wait()
     local tool = char:FindFirstChildOfClass("Tool")
@@ -91,5 +107,5 @@ local function setAge()
     end
 end
 
--- Connect
+-- Connect button to set the age
 button.MouseButton1Click:Connect(setAge)
