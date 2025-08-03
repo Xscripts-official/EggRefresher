@@ -1,0 +1,111 @@
+-- ❄ Sprinkler Freezer GUI
+-- Freezes sprinklers by setting Lifetime and disabling effects
+-- No bushes will be spawned
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- CREATE SCREEN GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = PlayerGui
+screenGui.ResetOnSpawn = false
+
+-- MAIN FRAME
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 130)
+frame.Position = UDim2.new(0.25, 0, 0.25, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 70, 40)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+-- Rounded corners
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = frame
+
+-- TITLE BAR
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, -30, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 50, 30)
+titleBar.Text = "🌿 Sprinkler Control"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.Font = Enum.Font.GothamBold
+titleBar.TextSize = 16
+titleBar.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
+-- X BUTTON
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+closeBtn.Parent = frame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 12)
+closeCorner.Parent = closeBtn
+
+-- FREEZE BUTTON
+local freezeBtn = Instance.new("TextButton")
+freezeBtn.Size = UDim2.new(0.8, 0, 0, 40)
+freezeBtn.Position = UDim2.new(0.1, 0, 0.5, -20)
+freezeBtn.Text = "❄ Freeze Sprinklers"
+freezeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+freezeBtn.Font = Enum.Font.GothamBold
+freezeBtn.TextSize = 18
+freezeBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+freezeBtn.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 12)
+btnCorner.Parent = freezeBtn
+
+-- STATE
+local frozen = false
+
+-- FUNCTION: Freeze sprinklers
+local function freezeSprinklers()
+	for _, obj in pairs(Workspace:GetDescendants()) do
+		if obj:IsA("Model") and string.find(obj.Name:lower(), "sprinkler") then
+			-- Set Lifetime to never expire
+			local lifetime = obj:FindFirstChild("Lifetime")
+			if lifetime and lifetime:IsA("NumberValue") then
+				lifetime.Value = math.huge
+			end
+
+			-- Disable water particles/beams
+			for _, child in pairs(obj:GetDescendants()) do
+				if child:IsA("ParticleEmitter") or child:IsA("Beam") then
+					child.Enabled = false
+				end
+			end
+		end
+	end
+end
+
+-- BUTTON EVENTS
+freezeBtn.MouseButton1Click:Connect(function()
+	if not frozen then
+		freezeSprinklers()
+		freezeBtn.Text = "✅ Sprinklers Frozen"
+		frozen = true
+	else
+		freezeBtn.Text = "❄ Freeze Sprinklers"
+		frozen = false
+	end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
