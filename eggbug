@@ -1,2 +1,212 @@
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/Xscripts-official/EggRefresher/refs/heads/main/eggsc"))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Xscripts-official/EggRefresher/refs/heads/main/eggswapper"))()
+--// Services
+local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+
+--// ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "GiftGrabberGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+--// Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.fromOffset(230, 150)
+mainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner", mainFrame)
+corner.CornerRadius = UDim.new(0, 14)
+
+local stroke = Instance.new("UIStroke", mainFrame)
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(70,70,70)
+
+-- Title
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1, -16, 0, 32)
+title.Position = UDim2.new(0, 8, 0, 6)
+title.BackgroundTransparency = 1
+title.Text = "🎁 Gift Grabber"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.TextColor3 = Color3.fromRGB(220,220,220)
+title.Parent = mainFrame
+
+-- Divider
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, -16, 0, 1)
+divider.Position = UDim2.new(0, 8, 0, 38)
+divider.BackgroundColor3 = Color3.fromRGB(60,60,60)
+divider.BorderSizePixel = 0
+divider.Parent = mainFrame
+
+-- Button factory
+local function makeButton(label, y)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, -16, 0, 44)
+	btn.Position = UDim2.new(0, 8, 0, y)
+	btn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+	btn.AutoButtonColor = true
+	btn.Text = label .. ": OFF"
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.Parent = mainFrame
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+	return btn
+end
+
+-- Buttons
+local giftBtn = makeButton("Gift Grabber", 48)
+local autoBtn = makeButton("Auto Accept", 98) -- cosmetic only
+
+-- State
+local giftOn = false
+local autoOn = false
+
+-- Track connections
+local playerAddedConn
+local toolConns: { [Player]: RBXScriptConnection } = {}
+
+-- Save transparency before hiding
+local savedPartLTM: { [BasePart]: number } = {}
+local savedDecalTrans: { [Decal]: number } = {}
+
+-- Hide and show characters
+local function hideCharacter(char: Model)
+	for _, obj in ipairs(char:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			if savedPartLTM[obj] == nil then
+				savedPartLTM[obj] = obj.LocalTransparencyModifier
+			end
+			obj.LocalTransparencyModifier = 1
+		elseif obj:IsA("Decal") then
+			if savedDecalTrans[obj] == nil then
+				savedDecalTrans[obj] = obj.Transparency
+			end
+			obj.Transparency = 1
+		end
+	end
+end
+
+local function showCharacter(char: Model)
+	for _, obj in ipairs(char:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			if savedPartLTM[obj] ~= nil then
+				obj.LocalTransparencyModifier = savedPartLTM[obj]
+				savedPartLTM[obj] = nil
+			else
+				obj.LocalTransparencyModifier = 0
+			end
+		elseif obj:IsA("Decal") then
+			if savedDecalTrans[obj] ~= nil then
+				obj.Transparency = savedDecalTrans[obj]
+				savedDecalTrans[obj] = nil
+			else
+				obj.Transparency = 0
+			end
+		end
+	end
+end
+
+-- Notification helper
+local function notify(titleText, text)
+	StarterGui:SetCore("SendNotification", {
+		Title = titleText,
+		Text = text,
+		Duration = 4
+	})
+end
+
+-- Tool tracking
+local function watchTools(plr: Player)
+	if toolConns[plr] then toolConns[plr]:Disconnect() end
+	toolConns[plr] = plr.CharacterAdded:Connect(function(char)
+		local backpack = plr:WaitForChild("Backpack", 5)
+		if backpack then
+			backpack.ChildAdded:Connect(function(tool)
+				if giftOn and tool:IsA("Tool") then
+					notify("Gift Grabber", plr.Name .. " equipped " .. tool.Name)
+				end
+			end)
+		end
+	end)
+	-- For already spawned characters
+	if plr.Character then
+		local backpack = plr:FindFirstChild("Backpack")
+		if backpack then
+			backpack.ChildAdded:Connect(function(tool)
+				if giftOn and tool:IsA("Tool") then
+					notify("Gift Grabber", plr.Name .. " equipped " .. tool.Name)
+				end
+			end)
+		end
+	end
+end
+
+-- Enable Gift Grabber
+local function enableGiftGrabber()
+	-- Hide players
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			hideCharacter(plr.Character)
+		end
+		if plr ~= LocalPlayer then
+			watchTools(plr)
+		end
+	end
+	-- New players
+	playerAddedConn = Players.PlayerAdded:Connect(function(plr)
+		if plr ~= LocalPlayer then
+			watchTools(plr)
+		end
+	end)
+end
+
+-- Disable Gift Grabber
+local function disableGiftGrabber()
+	-- Restore characters
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Character then
+			showCharacter(plr.Character)
+		end
+	end
+	-- Disconnect
+	for plr, conn in pairs(toolConns) do
+		if conn then conn:Disconnect() end
+	end
+	toolConns = {}
+	if playerAddedConn then playerAddedConn:Disconnect() playerAddedConn = nil end
+end
+
+-- Gift Grabber Toggle
+giftBtn.MouseButton1Click:Connect(function()
+	giftOn = not giftOn
+	if giftOn then
+		giftBtn.Text = "Gift Grabber: ON"
+		giftBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		enableGiftGrabber()
+	else
+		giftBtn.Text = "Gift Grabber: OFF"
+		giftBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+		disableGiftGrabber()
+	end
+end)
+
+-- Auto Accept Toggle (cosmetic only)
+autoBtn.MouseButton1Click:Connect(function()
+	autoOn = not autoOn
+	if autoOn then
+		autoBtn.Text = "Auto Accept: ON"
+		autoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+	else
+		autoBtn.Text = "Auto Accept: OFF"
+		autoBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+	end
+end)
